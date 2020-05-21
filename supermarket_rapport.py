@@ -67,24 +67,26 @@ class Reports:
     def __init__(self, products):
         self.products = products
 
-    def hourly_report(self):
+    def hourly_report(self, i):
         for product in self.products:
             name = product["name"]
             sold = product["items_sold"]
             sold_per_hour = product["sold_per_hour"]
-            updated_order_size = product["order_size"] - product["sold_per_hour"][0]
+            product["order_size"] = product["order_size"] - product["sold_per_hour"][i]
             # almost expired,
             # is expired
-            revenue_this_hour = round(product["sell"] * product["sold_per_hour"][0], 2)
+            revenue_this_hour = round(product["sell"] * product["sold_per_hour"][i], 2)
             print(
+                "HOUR #",
+                i + 1,
                 "NAME:",
                 name,
                 "SOLD:",
                 sold,
                 "SOLD THIS HOUR:",
-                sold_per_hour[0],
+                sold_per_hour[i],
                 "ITEMS LEFT:",
-                updated_order_size,
+                product["order_size"],
                 "MADE €",
                 revenue_this_hour,
             )
@@ -138,7 +140,7 @@ sales_percentage = 25, 75
 products = Product(supermarket_data.products, sales_percentage)
 important_hours = Hours(8, 22, 12)
 start_date = datetime.datetime(2020, 1, 6, 6)
-end_date = datetime.datetime(2020, 1, 6, 10)
+end_date = datetime.datetime(2020, 1, 6, 23)
 reports = Reports(supermarket_data.products,)
 
 
@@ -149,20 +151,19 @@ def execute_hourly(start, finish):
 
 
 for hour in execute_hourly(start_date, end_date):
-    i = 0
     if hour.hour == 7:
+        i = 0
         products.items_sold_per_item()
         products.sold_per_hour_per_item()
         print("its 7 in the morning")
-        # total_sold = products.items_sold_per_item()
-        # sold_per_hour = products.randomize_hour_sales(total_sold["items_sold"])
-        # print("total info", total_sold)
-    if hour.hour > 8 and hour.hour < 22:
+    if hour.hour > 8 and hour.hour < 23:
         print("--------------------------------------------------")
         print(f"print {hour.hour} o' clock report")
-        reports.hourly_report()
+        reports.hourly_report(i)
         i += 1
     if hour.hour == 12:
+        print("--------------------------------------------------")
         print(f"it's {hour.hour} o'clock, delivery is here!")
     if hour.hour == 22:
+        print("--------------------------------------------------")
         print(f"it's {hour.hour} o'clock, end of day {hour} report")
