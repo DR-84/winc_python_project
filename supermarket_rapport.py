@@ -9,34 +9,90 @@ class Hours:
         self.closing = closing
         self.delivery = delivery
 
+    def hours_open(self):
+        hours = self.closing - self.opening
+        return hours
+
 
 class Product:
-    def __init__(self, product):
+    def __init__(self, product, sales_percentage):
         self.product = product
+        self.sales_percentage = sales_percentage
 
     def get_product_name(self):
-        return self.product["name"]
+        for items in self.product:
+            return items["name"]
 
     def get_product_value_by_keyname(self, key):
-        return self.product[key]
+        for items in self.product:
+            return items[key]
 
-    def amount_sold_generator(self, from_percentage, till_percentage):
-        return
+    def amount_sold_generator(self, i):
+        order_size = self.product[i]["order_size"]
+        random_percentage = (
+            random.randint(self.sales_percentage[0], self.sales_percentage[1]) / 100
+        )
+        sold_items = order_size * random_percentage
+        return sold_items
+
+    def items_sold_per_item(self):
+        i = 0
+        for item in self.product:
+            item["items_sold"] = int(products.amount_sold_generator(i))
+            i += 1
+        return item
+
+    def sold_per_hour_per_item(self):
+        for item in self.product:
+            item["sold_per_hour"] = products.randomize_hour_sales(item["items_sold"])
+        return item
+
+    def randomize_hour_sales(self, end):
+        numlist = []
+        for hour in range(important_hours.hours_open() - 1):
+            numlist.append(random.randint(0, end))
+        sum_numlist = sum(numlist)
+        total_makes_one = [i / sum_numlist for i in numlist]
+        total_makes_end_num = [i * end for i in total_makes_one]
+        round_nums_in_list = [int(i) for i in total_makes_end_num]
+        sum_rounded_nums = sum(round_nums_in_list)
+        round_nums_in_list.append(end - sum_rounded_nums)
+        return round_nums_in_list
+
+    def update_order_size(self, i):
+        return self.product[i]["order_size"] - self.product[i]["sold_per_hour"][0]
 
 
 class Reports:
-    def __init__(self, product, sales, orders):
-        self.product = product
-        self.sales = sales
-        self.orders = orders
+    def __init__(self, products):
+        self.products = products
 
-    def hourly_report(self, product, sales):
+    def hourly_report(self):
+        for product in self.products:
+            name = product["name"]
+            sold = product["items_sold"]
+            sold_per_hour = product["sold_per_hour"]
+            updated_order_size = product["order_size"] - product["sold_per_hour"][0]
+            # almost expired,
+            # is expired
+            revenue_this_hour = round(product["sell"] * product["sold_per_hour"][0], 2)
+            print(
+                "NAME:",
+                name,
+                "SOLD:",
+                sold,
+                "SOLD THIS HOUR:",
+                sold_per_hour[0],
+                "ITEMS LEFT:",
+                updated_order_size,
+                "MADE €",
+                revenue_this_hour,
+            )
+
+    def daily_report(self):
         return
 
-    def daily_report(self, product, sales):
-        return
-
-    def weekly_report(self, product, sales):
+    def weekly_report(self):
         return
 
 
@@ -78,41 +134,35 @@ class Order:
         return
 
 
-albert_van_den_broek = Hours(8, 22, 12)
-start_date = datetime.datetime(2020, 1, 6, 8)
-end_date = datetime.datetime(2020, 1, 7, 8)
+sales_percentage = 25, 75
+products = Product(supermarket_data.products, sales_percentage)
+important_hours = Hours(8, 22, 12)
+start_date = datetime.datetime(2020, 1, 6, 6)
+end_date = datetime.datetime(2020, 1, 6, 10)
+reports = Reports(supermarket_data.products,)
 
 
-def report_hourly(start, finish):
+def execute_hourly(start, finish):
     while finish > start:
         start = start + datetime.timedelta(hours=1)
         yield start
 
 
-for hour in report_hourly(start_date, end_date):
+for hour in execute_hourly(start_date, end_date):
+    i = 0
+    if hour.hour == 7:
+        products.items_sold_per_item()
+        products.sold_per_hour_per_item()
+        print("its 7 in the morning")
+        # total_sold = products.items_sold_per_item()
+        # sold_per_hour = products.randomize_hour_sales(total_sold["items_sold"])
+        # print("total info", total_sold)
     if hour.hour > 8 and hour.hour < 22:
+        print("--------------------------------------------------")
         print(f"print {hour.hour} o' clock report")
+        reports.hourly_report()
+        i += 1
     if hour.hour == 12:
         print(f"it's {hour.hour} o'clock, delivery is here!")
     if hour.hour == 22:
-        print(f"it's {hour.hour} o'clock, end of day report")
-
-
-""" def random_subtractor_per_hour(subtractable_amount, hours):
-    subtracted = []
-    large_num = subtractable_amount / 2
-    while hours != 0:
-        num = random.randint(0, large_num)
-        if subtractable_amount != 0 or subtractable_amount > num:
-            subtracted.append(num)
-            subtractable_amount = subtractable_amount - num
-            hours -= 1
-        else:
-            subtracted.append(subtractable_amount)
-            subtractable_amount - subtractable_amount
-            hours -= 1
-
-        print(subtracted)
-
-
-random_subtractor_per_hour(100, 12) """
+        print(f"it's {hour.hour} o'clock, end of day {hour} report")
