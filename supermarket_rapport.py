@@ -151,6 +151,8 @@ def execute_hourly(start, finish):
 
 
 for hour in execute_hourly(start_date, end_date):
+    if start_date == hour - datetime.timedelta(hours=1):
+        print("INITIALIZED ORDER SIZE ROBOT NUCLEAR CONTINUUM EXPLODER FUSION!!")
     if hour.hour == 7:
         i = 0
         products.items_sold_per_item()
