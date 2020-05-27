@@ -1,4 +1,5 @@
-# \OneDrive\Bureaublad\Winc\winc_backend_code\Projecten\supermarket_project>Python supermarket_rapport.py
+# \OneDrive\Bureaublad\Winc\winc_backend_code\Projecten\
+# supermarket_project>Python supermarket_rapport.py
 import datetime
 import supermarket_data
 import random
@@ -67,7 +68,10 @@ class Product:
         return round_nums_in_list
 
     def update_stock_size(self, product, i):
-        return product["stock"] - product["sold_per_hour"][i]
+        if product["stock"] >= product["sold_per_hour"][i]:
+            return product["stock"] - product["sold_per_hour"][i]
+        else:
+            return product["stock"] - product["stock"]
 
     def init_exp_date(self, order_date):
         for item in self.product:
@@ -100,12 +104,13 @@ class Reports:
         for product in self.products:
             line = []
             name = product["name"]
+            stock_old = product["stock"]
             name_upper = product["name"].upper()
+            product["stock"] = products.update_stock_size(product, i)
             item_revenue_this_hour = round(
-                product["sell"] * product["sold_per_hour"][i], 2
+                product["sell"] * (stock_old - product["stock"]), 2
             )
             total.append(item_revenue_this_hour)
-            product["stock"] = products.update_stock_size(product, i)
             stock = product["stock"]
             if product["almost_expired"] is False and product["is_expired"] is False:
                 stock_warning = f"0(pcs) are expired"
@@ -113,7 +118,8 @@ class Reports:
                 stock_warning = f"{stock}(pcs) are almost expired!!!"
             if product["is_expired"] and product["almost_expired"]:
                 stock_warning = f"{stock}(pcs) are EXPIRED!!!"
-            line = f"{name_upper}: we have {stock}(pcs) of {name} left. {stock_warning} we made €{item_revenue_this_hour}."
+            line = f"{name_upper}: we have {stock}(pcs) of {name} left."
+            line += f" {stock_warning} we made €{item_revenue_this_hour}."
             total_string = f"THIS HOURS REVENUE: €{round(sum(total),2)}"
             print_lines.append(line)
         print_lines.append(total_string)
@@ -161,16 +167,34 @@ class OnSale:
 
 
 class Order:
-    def __init__(self):
-        return
+    def __init__(self, products):
+        self.products = products
+
+    def order_product(self):  # order product if product is sold out.
+        for product in self.products:
+            if product["stock"] <= 0:
+                product["is_ordered"] = True
+            else:
+                product["is_ordered"] = False
+        return product["is_ordered"]
+
+    def deliver_product(self):
+        for product in self.products:
+            name = product["name"]
+            if product["is_ordered"]:
+                product["stock"] = product["order_size"]
+                print(f"delivered: {name}")
+            else:
+                pass
 
 
 sales_percentage = 25, 75
 products = Product(supermarket_data.products, sales_percentage)
 important_hours = Hours(8, 22, 12)
 start_date = datetime.datetime(2020, 1, 6, 6)
-end_date = datetime.datetime(2020, 1, 6, 23)
+end_date = datetime.datetime(2020, 1, 8, 23)
 reports = Reports(supermarket_data.products,)
+order = Order(supermarket_data.products)
 
 
 def execute_hourly(start, finish):
@@ -183,6 +207,7 @@ for hour in execute_hourly(start_date, end_date):
     if start_date == hour - datetime.timedelta(hours=1):
         print("INITIALIZED ORDER SIZE ROBOT NUCLEAR CONTINUUM EXPLODER FUSION!!")
         products.init_exp_date(start_date)
+        order.order_product()
     if hour.hour == 7:
         i = 0
         products.items_sold_per_item()
@@ -200,9 +225,11 @@ for hour in execute_hourly(start_date, end_date):
         i += 1
     if hour.hour == 12:
         print("--------------------------------------------------")
+        order.deliver_product()
         print(f"it's {hour.hour} o'clock, delivery is here!")
     if hour.hour == 22:
         print("--------------------------------------------------")
+        order.order_product()
         print(products.get_item(0))
         print(products.get_item(1))
         print(f"it's {hour.hour} o'clock, end of day {hour} report")
